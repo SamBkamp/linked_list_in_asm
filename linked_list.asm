@@ -26,7 +26,7 @@ _start:
 	;set up head (first node)
 	mov rax, 0x41		;A character in our new node
 	mov rdi, 0		;prev_ptr is null because this is head
-	mov rsi, rbx		;bottom of our heap where we want our head to be
+	mov rsi, [rsp+8]		;bottom of our heap where we want our head node to be placed
 	call add_node
 
 	mov rax, 0x42		;B in our new node
@@ -38,12 +38,22 @@ _start:
 	add rax, 9		;move tail to our just created node
 	push rax		;push it back to the stack
 
+	mov rax, 0x43		;C in our new node
+	mov rdi, qword [rsp]	;bottom of stack contains our tail, move that address to rdi
+	mov rsi, rdi
+	add rsi, 9		;advance heap to our next free space (after previous node)
+	call add_node
+	pop rax
+	add rax, 9		;move tail to our just created node
+	push rax		;push it back to the stack
+
+	
 	pop rdi	;remove tail from stack
-	pop rax 		;get bottom of heap address (which should be the head)
+	mov rax, qword [rsp] 		;get bottom of heap address (which should be the head)
 	call traverse_list	
 	
 
-	mov rdi, rax
+	pop rdi			;pop head from stack to unmap heap area
 	mov rax, 0xb		;munmap
 	mov rsi, 4096
 	syscall
