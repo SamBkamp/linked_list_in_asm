@@ -20,33 +20,33 @@ _start:
 
 	
 	mov rbx, rax
-	push rax		;push bottom of heap address to stack
+	push rax		;push head to stack
+	push rax		;this will become our tail
 
-	mov word [rax], 0	;head of LL
-	add rax, 8
-	
-	mov byte [rax], 0x41	;new LL node
-	add rax, 1
-	mov word [rax], 0
+	;set up head (first node)
+	mov rax, 0x41		;A character in our new node
+	mov rdi, 0		;prev_ptr is null because this is head
+	mov rsi, rbx		;bottom of our heap where we want our head to be
+	call add_node
 
-	
-
- 	sub rax, 1
-	mov [rbx], rax	 	;set head
-
-	push rbx
-	push rax
-	mov rdi, rbx
-	call traverse_list
+	mov rax, 0x42		;B in our new node
+	mov rdi, qword [rsp]	;bottom of stack contains our tail, move that address to rdi
+	mov rsi, rdi
+	add rsi, 9		;advance heap to our next free space (after previous node)
+	call add_node
 	pop rax
-	pop rbx
+	add rax, 9		;move tail to our just created node
+	push rax		;push it back to the stack
+
+	pop rdi	;remove tail from stack
+	pop rax 		;get bottom of heap address (which should be the head)
+	call traverse_list	
 	
-	
+
+	mov rdi, rax
 	mov rax, 0xb		;munmap
-	pop rdi
 	mov rsi, 4096
 	syscall
-
 
 	
 exit:
@@ -54,21 +54,33 @@ exit:
 	mov rdi, 0
 	syscall
 
-traverse_list: 			;traverse_list(void *head)
-	mov rdi, [rdi]		;get first node in head by dereferencing first pointer
-	call print_char
-	add rdi, 1		;incr struct to get pointer to next node
-	mov rsi, [rdi]		;get address and move to rsi
-	test rsi, rsi
-	jnz traverse_list	;if next address is not 0 then repeat loop
+add_node:			;add_node(char new_char, node* prev_node, node* new_node) 
+	mov [rsi], al		;add new_char to our node
+	mov word [rsi+1], 0	;set our next_ptr to null
+
+	test rdi, rdi
+	jz skip_prev		;if prev pointer is 0 (null) then don't get previous pointer (for head)
+	mov [rdi+1], rsi		;move address of current node to previous node
+skip_prev:
 	ret
 	
 
-print_char:			;print_char(char* c)
-	push rdi
+traverse_list: 			;traverse_list(node *head)
+	push rax		;preserve rax on stack
+	mov rax, [rax]		;dereference struct to get char
+	call print_char
+	pop rax			;restore rax
+	inc rax			;move passed the char to get the address of next node
+	mov rbx, [rax]		;dereference next address
+	mov rax, [rax]		;store next node in rax to prepare to jump
+	test rbx, rbx
+	jnz traverse_list	;if next pointer doesn't point to null then jump to next node
+	ret
+	
+
+print_char:			;print_char(char c)
 	sub rsp, 2		;one char + 0x0a
-	mov al, [rdi]
-	mov [rsp], al
+	mov byte [rsp], al
 	mov byte [rsp+1], 0xa
 	mov rsi, rsp
 	mov rdi, 2
@@ -76,5 +88,4 @@ print_char:			;print_char(char* c)
 	mov rdx, 2
 	syscall
 	add rsp, 2
-	pop rdi
 	ret
