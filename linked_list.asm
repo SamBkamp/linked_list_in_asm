@@ -22,38 +22,31 @@ _start:
 	push rax		;push head to stack
 	push rax		;this will become our tail
 
+	;ADDING NODES TO LL
 	;set up head (first node)
 	mov rax, 0x41		;A character in our new node
 	mov rdi, 0		;prev_ptr is null because this is head
-	mov rsi, [rsp+8]		;bottom of our heap where we want our head node to be placed
+	mov rsi, qword [rsp+8]		;bottom of our heap where we want our head node to be placed
 	call add_node
 
 	mov rax, 0x42		;B in our new node
 	mov rdi, qword [rsp]	;bottom of stack contains our tail, move that address to rdi
-	mov rsi, rdi
-	add rsi, 9		;advance heap to our next free space (after previous node)
+	add qword [rsp], 9	;advance tail 
+	mov rsi, qword [rsp]	;pass our new tail (new node) to add_node
 	call add_node
-	pop rax
-	add rax, 9		;move tail to our just created node
-	push rax		;push it back to the stack
-
+	
 	mov rax, 0x43		;C in our new node
 	mov rdi, qword [rsp]	;bottom of stack contains our tail, move that address to rdi
-	mov rsi, rdi
-	add rsi, 9		;advance heap to our next free space (after previous node)
+	add qword [rsp], 9	;advance tail 
+	mov rsi, qword [rsp]	;pass our new tail (new node) to add_node
 	call add_node
-	pop rax
-	add rax, 9		;move tail to our just created node
-	push rax		;push it back to the stack
-
 	
 	pop rdi	;remove tail from stack
 	mov rax, qword [rsp] 		;get bottom of heap address (which should be the head)
 	call traverse_list	
 	
-
-	pop rdi			;pop head from stack to unmap heap area
 	mov rax, 0xb		;munmap
+	pop rdi			;pop head from stack to unmap heap area
 	mov rsi, 4096
 	syscall
 
@@ -69,16 +62,16 @@ add_node:			;add_node(char new_char, node* prev_node, node* new_node)
 
 	test rdi, rdi
 	jz skip_prev		;if prev pointer is 0 (null) then don't get previous pointer (for head)
-	mov [rdi+1], rsi		;move address of current node to previous node
+	mov [rdi+1], rsi	;move address of current node to previous node
 skip_prev:
 	ret
 	
 
 traverse_list: 			;traverse_list(node *head)
-	push rax		;preserve rax on stack
-	mov rax, [rax]		;dereference struct to get char
+	push rax		;preserve struct address on stack
+	mov al, byte [rax]	;dereference struct to get char
 	call print_char
-	pop rax			;restore rax
+	pop rax			;restore pointer to struct
 	inc rax			;move passed the char to get the address of next node
 	mov rbx, [rax]		;dereference next address
 	mov rax, [rax]		;store next node in rax to prepare to jump
