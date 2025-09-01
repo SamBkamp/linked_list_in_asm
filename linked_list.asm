@@ -19,7 +19,6 @@ _start:
 	jl exit
 
 	
-	mov rbx, rax
 	push rax		;push head to stack
 	push rax		;this will become our tail
 
