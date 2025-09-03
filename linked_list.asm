@@ -58,7 +58,7 @@ exit:
 
 add_node:			;add_node(char new_char, node* prev_node, node* new_node) 
 	mov [rsi], al		;add new_char to our node
-	mov word [rsi+1], 0	;set our next_ptr to null
+	mov qword [rsi+1], 0	;set our next_ptr to null
 
 	test rdi, rdi
 	jz skip_prev		;if prev pointer is 0 (null) then don't get previous pointer (for head)
