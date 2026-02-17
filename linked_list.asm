@@ -87,14 +87,14 @@ traverse_list:
 
 ;;           al
 ;;print_char(uint8_t char)
-print_char:			;print_char(char c)
-        sub rsp, 2		;one char + 0x0a
-        mov byte [rsp], al
-        mov byte [rsp+1], 0xa
-        mov rsi, rsp
-        mov rdi, 2
-        mov rax, 0x1
-        mov rdx, 2
+print_char:
+        and rax, 0xff           ;zero all top bits
+        or rax, 0x0a00          ;make second byte a newline
+        push rax                ;push our string onto the stack
+        mov rsi, rsp            ;stack pointer as string pointer
+        mov rdi, 2              ;stdout
+        mov rax, 0x1            ;write syscall num
+        mov rdx, 2              ;count
         syscall
-        add rsp, 2
+        add rsp, 8
         ret
